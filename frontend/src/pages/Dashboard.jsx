@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import GoalForm from '../components/GoalForm'
+import ChatInterface from '../components/ChatInterface'
 import GoalItem from '../components/GoalItem'
 import Spinner from '../components/Spinner'
 import { getGoals, reset } from '../features/goals/goalSlice'
@@ -31,10 +32,6 @@ function Dashboard() {
     }
   }, [user, navigate, isError, message, dispatch])
 
-  if (isLoading) {
-    return <Spinner />
-  }
-
   return (
     <>
       <section className='heading'>
@@ -42,10 +39,14 @@ function Dashboard() {
         <p>Goals Dashboard</p>
       </section>
 
+      <ChatInterface />
+
       <GoalForm />
 
       <section className='content'>
-        {goals.length > 0 ? (
+        {isLoading ? (
+          <Spinner />
+        ) : goals.length > 0 ? (
           <div className='goals'>
             {goals.map((goal) => (
               <GoalItem key={goal._id} goal={goal} />
