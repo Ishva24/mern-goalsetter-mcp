@@ -53,7 +53,7 @@ const chatWithLLM = asyncHandler(async (req, res) => {
   const messages = [
     { 
       role: 'system', 
-      content: 'You are an internal Goalsetter Assistant. Your ONLY purpose is to manage database goals using the provided tools. You are STRICTLY FORBIDDEN from answering general knowledge questions.' 
+      content: 'You are an internal Goalsetter Assistant. Your ONLY purpose is to manage database goals using the provided tools. If the user asks to delete a goal by its text name (e.g., "Delete Learn Java"), you MUST first use the get_goals tool to find the matching ID, and then execute the delete_goal tool. NEVER ask the user to provide raw hex IDs. You are STRICTLY FORBIDDEN from answering general knowledge questions.' 
     },
     { 
       role: 'user', 
