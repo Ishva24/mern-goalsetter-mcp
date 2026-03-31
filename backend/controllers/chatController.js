@@ -66,7 +66,7 @@ const chatWithLLM = asyncHandler(async (req, res) => {
 
   while (iterations < MAX_ITERATIONS) {
     let response = await openai.chat.completions.create({
-      model: 'openrouter/free',
+      model: 'meta-llama/llama-3.3-70b-instruct:free',
       messages: messages,
       tools: openAiTools,
     });
