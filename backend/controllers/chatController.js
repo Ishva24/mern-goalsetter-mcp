@@ -61,67 +61,73 @@ const chatWithLLM = asyncHandler(async (req, res) => {
     }
   ];
 
-  let response = await openai.chat.completions.create({
-    model: 'openrouter/free',
-    messages: messages,
-    tools: openAiTools,
-  });
+  let iterations = 0;
+  const MAX_ITERATIONS = 4;
 
-  const assistantMessage = response.choices[0].message;
+  while (iterations < MAX_ITERATIONS) {
+    let response = await openai.chat.completions.create({
+      model: 'openrouter/free',
+      messages: messages,
+      tools: openAiTools,
+    });
 
-  if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-    messages.push(assistantMessage);
+    const assistantMessage = response.choices[0].message;
 
-    for (const toolCall of assistantMessage.tool_calls) {
-      const toolName = toolCall.function.name;
-      
-      // SCOPE VALIDATION: Ensure the tool is explicitly allowed
-      if (!ALLOWED_TOOLS.includes(toolName)) {
-         messages.push({
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: `ERROR: Execution of '${toolName}' is forbidden by system context boundary.`
-         });
-         continue; // Skip execution and prevent backend hit
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      // The AI wants to execute a tool (or tools). Add its request to history.
+      messages.push(assistantMessage);
+
+      for (const toolCall of assistantMessage.tool_calls) {
+        const toolName = toolCall.function.name;
+        
+        // SCOPE VALIDATION: Ensure the tool is explicitly allowed
+        if (!ALLOWED_TOOLS.includes(toolName)) {
+           messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: `ERROR: Execution of '${toolName}' is forbidden by system context boundary.`
+           });
+           continue; 
+        }
+
+        const args = JSON.parse(toolCall.function.arguments);
+        
+        // Inject internal explicit User ID
+        const sanitizedArgs = {
+            ...args,
+            user_id: userId 
+        };
+
+        let toolResult;
+        try {
+            const mcpResponse = await callTool(toolName, sanitizedArgs);
+            toolResult = mcpResponse.content[0].text;
+        } catch (err) {
+            toolResult = `Error running tool: ${err.message}`;
+        }
+
+        // Return the tool's result to the AI so it can evaluate it
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: toolResult,
+        });
       }
-
-      const args = JSON.parse(toolCall.function.arguments);
       
-      // Inject internal explicit User ID (Act-As Header context)
-      const sanitizedArgs = {
-          ...args,
-          user_id: userId 
-      };
-
-      let toolResult;
-      try {
-          const mcpResponse = await callTool(toolName, sanitizedArgs);
-          toolResult = mcpResponse.content[0].text;
-      } catch (err) {
-          toolResult = `Error running tool: ${err.message}`;
-      }
-
-      messages.push({
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: toolResult,
+      // Increment iterations so it loops back and asks the AI "What's next?"
+      iterations++;
+    } else {
+      // The AI is finally finished and replied with standard English text!
+      return res.status(200).json({
+        reply: assistantMessage.content
       });
     }
-
-    const secondResponse = await openai.chat.completions.create({
-        model: 'openrouter/free',
-        messages: messages,
-        tools: openAiTools,
-    });
-
-    res.status(200).json({
-      reply: secondResponse.choices[0].message.content
-    });
-  } else {
-    res.status(200).json({
-      reply: assistantMessage.content
-    });
   }
+
+  // Safety Break: If the AI gets stuck in an infinite tool-calling loop (Model Hallucination)
+  return res.status(200).json({
+    reply: "I had to abort this action because the request required too many complex steps to process safely."
+  });
 });
 
 module.exports = {
