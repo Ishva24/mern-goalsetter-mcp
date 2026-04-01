@@ -1,2 +1,7 @@
 node_modules
 .env
+.mcp-auth-session.json
+out.txt
+out2.txt
+test_workflow.js
+frontend/build
