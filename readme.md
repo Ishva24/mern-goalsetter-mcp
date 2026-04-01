@@ -1,231 +1,95 @@
-# 🎯 Goalsetter — AI-Powered MERN App with MCP + Gemini
+# Goalsetter Application
 
-A full-stack MERN application that lets authenticated users manage personal goals through a natural-language AI Assistant, powered by **Google Gemini 2.5 Flash** and an **MCP (Model Context Protocol) tool-calling architecture**.
+A full-stack MERN (MongoDB, Express, React, Node.js) application that enables authenticated users to manage personal goals through a natural language interface. The system integrates Google Gemini 2.5 Flash and Model Context Protocol (MCP) to provide an AI assistant capable of creating, reading, and deleting goals directly via conversational prompts.
 
----
+## Architecture
 
-## 📐 Architecture Overview
+The application is structured into three primary components:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (React)                     │
-│         User types a prompt → Chat UI renders reply         │
-└───────────────────────────┬─────────────────────────────────┘
-                            │ POST /api/chat
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Backend (Express / Node)                  │
-│  chatController.js → Calls Google Gemini 2.5 Flash API      │
-│  Gemini decides which MCP tool to call (get/create/delete)  │
-└───────────────────────────┬─────────────────────────────────┘
-                            │ stdio (child process)
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  MCP Server (mcp-server/)                   │
-│   Exposes tools: get_goals / create_goal / delete_goal      │
-│   Calls the backend REST API with internal auth headers     │
-└───────────────────────────┬─────────────────────────────────┘
-                            │ REST API calls
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                MongoDB (local or Atlas)                     │
-│                    Users + Goals collections                │
-└─────────────────────────────────────────────────────────────┘
-```
+1. **Frontend (React)**: Provides the user interface, including authentication and chat interactions.
+2. **Backend (Node.js/Express)**: Handles REST API requests, database interactions, and orchestrates calls to the Gemini API.
+3. **MCP Server**: Runs as a separate process to securely expose core database operations to the AI model.
 
----
+## Technology Stack
 
-## 🤖 AI Model Used
+- **Frontend**: React, Redux Toolkit, Axios
+- **Backend**: Node.js, Express, Mongoose
+- **Database**: MongoDB
+- **AI Integration**: Google Gemini 2.5 Flash (via `@google/generative-ai` SDK)
+- **Tool Protocol**: Model Context Protocol (MCP)
+- **Authentication**: JSON Web Tokens (JWT)
 
-| Detail | Value |
-|---|---|
-| **Provider** | Google Gemini (via `@google/generative-ai` SDK) |
-| **Model** | `gemini-2.5-flash` |
-| **Free Tier** | ✅ Yes — no billing required for the free tier |
-| **Feature Used** | Function Calling (tool use) with multi-turn conversations |
+## Prerequisites
 
-The model is configured via `GEMINI_MODEL` in your `.env` file. You can swap it to any available Gemini model (e.g. `gemini-2.0-flash`) without code changes.
+Ensure you have the following installed before starting:
+- **Node.js** (v18 or higher)
+- **MongoDB** (running locally, or a MongoDB Atlas URI)
+- **Google Gemini API Key** (available free of charge via Google AI Studio)
 
----
+## Local Setup Instructions
 
-## 🛠️ Tech Stack
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Ishva24/mern-goalsetter-mcp.git
+   cd mern-tutorial
+   ```
 
-| Layer | Technology |
-|---|---|
-| Frontend | React, Redux Toolkit, Axios |
-| Backend | Node.js, Express, Mongoose |
-| Database | MongoDB |
-| AI | Google Gemini 2.5 Flash |
-| AI Protocol | MCP (Model Context Protocol) |
-| Auth | JWT (JSON Web Tokens) |
+2. **Install Root Dependencies**
+   Installs the core backend and MCP client libraries.
+   ```bash
+   npm install
+   ```
 
----
+3. **Install MCP Server Dependencies**
+   ```bash
+   cd mcp-server
+   npm install
+   cd ..
+   ```
 
-## 📋 Prerequisites
+4. **Install Frontend Dependencies**
+   ```bash
+   cd frontend
+   npm install
+   cd ..
+   ```
 
-Make sure you have these installed before starting:
+5. **Configure Environment Variables**
+   Copy the provided environment template:
+   ```bash
+   cp .env.example .env
+   ```
+   Open the newly created `.env` file and configure your credentials:
+   - `MONGO_URI`: Your local or Atlas MongoDB connection string.
+   - `JWT_SECRET`: A secure random string for signing user tokens.
+   - `GEMINI_API_KEY`: Your Google Gemini API key.
+   - `GEMINI_MODEL`: Leave as `gemini-2.5-flash`.
 
-- **Node.js** v18 or higher → [https://nodejs.org](https://nodejs.org)
-- **MongoDB** (local) → [https://www.mongodb.com/try/download/community](https://www.mongodb.com/try/download/community)  
-  _Or use a free MongoDB Atlas cluster → [https://cloud.mongodb.com](https://cloud.mongodb.com)_
-- **Google Gemini API Key** (free) → [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+## Running the Application
 
----
-
-## 🚀 Local Setup
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/Ishva24/mern-goalsetter-mcp.git
-cd mern-tutorial
-```
-
-### 2. Install root dependencies (Backend + MCP client)
-
-```bash
-npm install
-```
-
-This installs:
-- `express`, `mongoose`, `jsonwebtoken`, `bcryptjs` — backend core
-- `@modelcontextprotocol/sdk` — MCP client (connects backend → MCP server)
-- `@google/generative-ai` — Google Gemini SDK
-- `dotenv`, `express-async-handler`, `colors`, `concurrently`, `nodemon`
-
-### 3. Install MCP Server dependencies
-
-```bash
-cd mcp-server
-npm install
-cd ..
-```
-
-This installs the MCP server's own copy of:
-- `@modelcontextprotocol/sdk` — MCP server SDK
-- `mongoose`, `dotenv`, `jsonwebtoken`, `bcryptjs`
-
-### 4. Install Frontend dependencies
-
-```bash
-cd frontend
-npm install
-cd ..
-```
-
-### 5. Set up environment variables
-
-Copy the example file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Then open `.env` and set:
-
-```env
-NODE_ENV = development
-PORT = 5000
-
-# Your local or Atlas MongoDB connection string
-MONGO_URI = mongodb://127.0.0.1:27017/mernapp
-
-# Any random string for signing JWTs
-JWT_SECRET = your_secret_here
-
-# Leave as-is for local setup
-MCP_AUTH_SESSION_FILE=.mcp-auth-session.json
-
-# Get your free key at https://aistudio.google.com/app/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# The Gemini model to use (free, no billing needed)
-GEMINI_MODEL=gemini-2.5-flash
-```
-
----
-
-## ▶️ Running the App
-
-### Run backend + frontend together (recommended)
+To start both the frontend and backend concurrently (recommended for development):
 
 ```bash
 npm run dev
 ```
 
-This starts:
-- **Backend** at `http://localhost:5000` (nodemon, hot-reload)
-- **Frontend** at `http://localhost:3000` (React dev server)
-- **MCP Server** is launched automatically as a child process by the backend
+The services will initialize at:
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:5000`
 
-### Run backend only
+*Note: The MCP Server will automatically launch as a child process managed by the backend. No manual start is required.*
 
-```bash
-npm run server
-```
+## Security Overview
 
-### Run frontend only
+- **Data Privacy**: Internal user IDs are injected securely during server-side tool resolution and are never exposed to the Gemini model.
+- **Access Control**: The MCP Server relies on an internal API key (`X-Server-Api-Key`) rather than exposing frontend tokens, minimizing unauthorized attack vectors.
 
-```bash
-npm run client
-```
+## Troubleshooting
 
----
+- **EADDRINUSE (Port 5000)**: If the backend fails to start, ensure no other service is utilizing port 5000. Use `taskkill /F /IM node.exe` (Windows) to clean up orphaned Node processes.
+- **Empty AI Responses**: Confirm that your `GEMINI_API_KEY` is valid and the model is explicitly set to `gemini-2.5-flash`.
+- **Database Errors**: Verify MongoDB is running locally, or check that your IP allows access if utilizing MongoDB Atlas.
 
-## 🔑 How to Get a Free Gemini API Key
+## License
 
-1. Go to [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click **"Create API key"**
-4. Copy the key and paste it as `GEMINI_API_KEY` in your `.env` file
-
-> **Note:** The `gemini-2.5-flash` model is available on Google's free tier with generous rate limits. No credit card or billing required.
-
----
-
-## 📁 Project Structure
-
-```
-mern-tutorial/
-├── backend/
-│   ├── config/          # MongoDB connection
-│   ├── controllers/     # Route handlers (users, goals, chat)
-│   ├── middleware/      # Auth (JWT protect) + error handler
-│   ├── models/          # Mongoose schemas (User, Goal)
-│   ├── routes/          # Express routers
-│   ├── services/        # mcpClient.js — connects to MCP server
-│   └── server.js        # Express app entry point
-│
-├── mcp-server/
-│   └── index.js         # MCP server — exposes get/create/delete goal tools
-│
-├── frontend/
-│   └── src/
-│       ├── components/  # ChatInterface, GoalForm, GoalItem, Header
-│       ├── features/    # Redux slices for auth and goals
-│       └── pages/       # Dashboard, Login, Register
-│
-├── .env.example         # Copy this to .env and fill in your values
-└── package.json         # Root scripts (dev, server, client)
-```
-
----
-
-## 🔐 Security Notes
-
-- The `user_id` is **never exposed to the Gemini model** — it is injected server-side only.
-- The MCP server uses internal API key headers (`X-Server-Api-Key`) — not user tokens.
-- The `.env` file is excluded from git via `.gitignore`. **Never commit real secrets.**
-
----
-
-## 🐛 Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| `EADDRINUSE: port 5000` | Another process is using port 5000. Run `taskkill /F /IM node.exe` (Windows) or `pkill node` (Mac/Linux) |
-| `MongoDB connection failed` | Make sure MongoDB is running locally, or update `MONGO_URI` with your Atlas connection string |
-| AI response is empty / blocked | Check your `GEMINI_API_KEY` is correct and the model name in `GEMINI_MODEL` is valid |
-| MCP tools not working | The MCP server starts automatically — check backend console for `[Gemini API error]` messages |
-
----
+MIT
