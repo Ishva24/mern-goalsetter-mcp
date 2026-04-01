@@ -229,7 +229,3 @@ mern-tutorial/
 | MCP tools not working | The MCP server starts automatically — check backend console for `[Gemini API error]` messages |
 
 ---
-
-## 📝 License
-
-MIT
