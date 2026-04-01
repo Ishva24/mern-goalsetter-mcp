@@ -77,7 +77,7 @@ Make sure you have these installed before starting:
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Ishva24/mern-goalsetter-mcp.git
 cd mern-tutorial
 ```
 
